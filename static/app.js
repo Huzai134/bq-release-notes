@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const skeletonLoading = document.getElementById('skeleton-loading');
     const emptyState = document.getElementById('empty-state');
     const notesStream = document.getElementById('notes-stream');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
     
     // Modal DOM Elements
     const tweetModal = document.getElementById('tweet-modal');
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listeners
     refreshBtn.addEventListener('click', () => fetchReleaseNotes(true));
+    exportCsvBtn.addEventListener('click', exportToCSV);
     
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
@@ -276,13 +278,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 typePill.className = `note-type-pill ${note.typeLower}`;
                 typePill.innerHTML = `<span class="badge badge-${note.typeLower}"></span> ${note.type}`;
                 
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'note-actions';
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-action-btn';
+                copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i> <span>Copy</span>`;
+                copyBtn.title = "Copy release note text to clipboard";
+                copyBtn.addEventListener('click', () => {
+                    const copyText = `BigQuery ${note.type} Update (${note.date}):\n"${note.contentText}"\nRead more: ${note.link}`;
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        const originalHtml = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Copied!</span>`;
+                        copyBtn.style.color = 'var(--color-feature)';
+                        copyBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHtml;
+                            copyBtn.style.color = '';
+                            copyBtn.style.borderColor = '';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Copy failed', err);
+                    });
+                });
+                
                 const tweetBtn = document.createElement('button');
                 tweetBtn.className = 'tweet-action-btn';
-                tweetBtn.innerHTML = `<i class="fa-brands fa-x-twitter"></i> <span>Tweet Update</span>`;
+                tweetBtn.innerHTML = `<i class="fa-brands fa-x-twitter"></i> <span>Tweet</span>`;
                 tweetBtn.addEventListener('click', () => openTweetModal(note));
                 
+                actionsContainer.appendChild(copyBtn);
+                actionsContainer.appendChild(tweetBtn);
+
                 meta.appendChild(typePill);
-                meta.appendChild(tweetBtn);
+                meta.appendChild(actionsContainer);
                 noteItem.appendChild(meta);
 
                 // Content
@@ -436,5 +465,46 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function exportToCSV() {
+        if (filteredNotes.length === 0) {
+            alert("No data available to export.");
+            return;
+        }
+
+        const headers = ["Date", "Type", "Content", "Link"];
+        
+        const escapeCSVValue = (val) => {
+            if (val === null || val === undefined) return '';
+            let stringVal = String(val);
+            stringVal = stringVal.replace(/"/g, '""');
+            if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n') || stringVal.includes('\r')) {
+                return `"${stringVal}"`;
+            }
+            return stringVal;
+        };
+
+        const rows = [
+            headers.join(','),
+            ...filteredNotes.map(note => [
+                escapeCSVValue(note.date),
+                escapeCSVValue(note.type),
+                escapeCSVValue(note.contentText),
+                escapeCSVValue(note.link)
+            ].join(','))
+        ];
+
+        const csvContent = rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `bq_release_notes_${currentFilter}_export.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 });

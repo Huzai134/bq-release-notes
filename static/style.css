@@ -557,6 +557,52 @@ body {
     transform: translateY(-1px);
 }
 
+.note-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.copy-action-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-fast);
+}
+
+.copy-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: var(--border-radius-sm);
+}
+
+.export-btn {
+    margin-left: auto;
+}
+
+@media (max-width: 768px) {
+    .export-btn {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+        justify-content: center;
+    }
+}
+
 .note-content {
     font-size: 15px;
     color: var(--text-secondary);
